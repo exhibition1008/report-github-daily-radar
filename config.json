@@ -35,6 +35,7 @@
     "export_html": true,
     "export_markdown": true,
     "export_excel": true,
+    "generate_podcast": true,
     "auto_open_browser": false
   },
   "telegram": {

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 GitHub Daily Radar - Main Entry Point
-Chạy công cụ quét, xuất báo cáo Markdown/HTML/Excel, gửi Telegram và đồng bộ Google Sheets.
+Chạy công cụ quét, xuất báo cáo Markdown/HTML/Excel, sinh file Audio Podcast, gửi Telegram và đồng bộ Google Sheets.
 """
 
 import os
@@ -23,6 +23,7 @@ from reporter import generate_markdown, generate_html
 from excel_exporter import append_or_update_excel
 from telegram_notifier import send_telegram_radar
 from sheets_sync import sync_to_google_sheets
+from audio_podcast import generate_audio_podcast
 
 def load_config(config_path):
     if not os.path.exists(config_path):
@@ -60,6 +61,7 @@ def run_radar():
     md_file = os.path.join(reports_dir, f"radar_{date_str}.md")
     html_file = os.path.join(reports_dir, f"radar_{date_str}.html")
     excel_file = os.path.join(reports_dir, "github_radar_archive.xlsx")
+    audio_file = os.path.join(reports_dir, f"podcast_{date_str}.mp3")
     
     settings = config.get("settings", {})
     if settings.get("export_markdown", True):
@@ -68,16 +70,22 @@ def run_radar():
     if settings.get("export_html", True):
         generate_html(processed_data, html_file)
 
-    # 4. Gửi tin nhắn qua Telegram Bot
-    print("\n[*] Đang kiểm tra cấu hình Telegram...")
-    send_telegram_radar(processed_data, config.get("telegram", {}))
+    # 4. Sinh file âm thanh Audio Podcast
+    audio_path = None
+    if settings.get("generate_podcast", True):
+        print("\n[*] Đang tổng hợp bản tin Radio Audio Podcast...")
+        audio_path = generate_audio_podcast(processed_data, audio_file)
 
-    # 5. Lưu và cập nhật lũy tiến vào file Excel Offline
+    # 5. Gửi tin nhắn và file Voice qua Telegram Bot
+    print("\n[*] Đang kiểm tra cấu hình Telegram...")
+    send_telegram_radar(processed_data, config.get("telegram", {}), audio_file_path=audio_path)
+
+    # 6. Lưu và cập nhật lũy tiến vào file Excel Offline
     if settings.get("export_excel", True):
         print("\n[*] Đang đồng bộ và lưu trữ vào cơ sở dữ liệu Excel (Offline)...")
         append_or_update_excel(processed_data, excel_file)
 
-    # 6. Đồng bộ lên Google Sheets Online
+    # 7. Đồng bộ lên Google Sheets Online
     print("\n[*] Đang kiểm tra cấu hình Google Sheets Online...")
     sync_to_google_sheets(processed_data, config.get("google_sheets", {}))
         
@@ -86,9 +94,11 @@ def run_radar():
     print(f"   📄 Markdown: {md_file}")
     print(f"   🌐 HTML Dashboard: {html_file}")
     print(f"   📊 Excel Archive: {excel_file}")
+    if audio_path:
+        print(f"   🎙️ Audio Podcast: {audio_path}")
     print("=" * 60)
 
-    # 7. Tự động mở Dashboard (nếu bật)
+    # 8. Tự động mở Dashboard (nếu bật)
     if not args.no_open and settings.get("auto_open_browser", False):
         print("\n[+] Đang mở Web Dashboard trên trình duyệt của bạn...")
         webbrowser.open(f"file:///{os.path.abspath(html_file)}")
