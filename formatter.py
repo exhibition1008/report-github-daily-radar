@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 GitHub Daily Radar - Formatter Module
-Xử lý, làm sạch và định dạng dữ liệu repository.
+Format, sanitize and structure repository metadata in English.
 """
 
 from datetime import datetime
@@ -20,19 +20,17 @@ LANGUAGE_COLORS = {
 }
 
 def format_number(num):
-    """Định dạng số sao / forks gọn gàng (ví dụ 1.2k)"""
+    """Format star and fork numbers cleanly (e.g. 12.5k)"""
     if num >= 1000:
         return f"{num/1000:.1f}k"
     return str(num)
 
 def format_repo_item(item):
-    """
-    Định dạng 1 repo item thành cấu trúc chuẩn cho báo cáo.
-    """
+    """Format single repository item into normalized structure"""
     name = item.get("name", "")
     full_name = item.get("full_name", "")
     html_url = item.get("html_url", "")
-    description = item.get("description") or "Không có mô tả chi tiết từ tác giả."
+    description = item.get("description") or "No description provided by author."
     stars = item.get("stargazers_count", 0)
     forks = item.get("forks_count", 0)
     language = item.get("language") or "N/A"
@@ -56,7 +54,7 @@ def format_repo_item(item):
         "forks_formatted": format_number(forks),
         "language": language,
         "lang_color": lang_color,
-        "topics": topics[:5],  # lấy tối đa 5 tags nổi bật
+        "topics": topics[:5],
         "owner_login": owner_login,
         "owner_avatar": owner_avatar,
         "created_at": created_at,
@@ -64,9 +62,7 @@ def format_repo_item(item):
     }
 
 def process_radar_data(raw_results):
-    """
-    Xử lý toàn bộ kết quả từ fetcher thành dữ liệu hiển thị.
-    """
+    """Transform raw fetch results into processed data"""
     processed = []
     for cat_id, data in raw_results.items():
         cat_info = data["category_info"]

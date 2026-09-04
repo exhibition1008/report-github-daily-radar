@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 GitHub Daily Radar - AI Insight Module (Fast & Smart)
-Tự động phân tích giá trị thực tế, ý tưởng ứng dụng và cách cài nhanh.
+Analyze practical applications, real-world use cases, and extract quick start commands in English.
 """
 
 import re
 import urllib.request
 
 def fetch_repo_readme(full_name):
-    """Tải nhanh README với timeout 2 giây"""
+    """Fast fetch of README with 2-second timeout"""
     url = f"https://raw.githubusercontent.com/{full_name}/main/README.md"
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "GitHub-Daily-Radar"})
@@ -20,7 +20,7 @@ def fetch_repo_readme(full_name):
     return ""
 
 def extract_quick_start(full_name, readme_text):
-    """Trích xuất lệnh cài đặt nhanh hoặc sinh lệnh mẫu chuẩn"""
+    """Extract fast installation command or fallback to clean clone command"""
     if readme_text:
         patterns = [
             r"(pip install [a-zA-Z0-9_\-\.]+)",
@@ -35,26 +35,25 @@ def extract_quick_start(full_name, readme_text):
     return f"git clone https://github.com/{full_name}.git"
 
 def generate_ai_insight(repo_item, fetch_online=False):
-    """Phân tích chuyên sâu ứng dụng thực tế của repo"""
+    """Analyze high-value practical use cases in English"""
     full_name = repo_item["full_name"]
     topics = repo_item.get("topics", [])
     
     readme = fetch_repo_readme(full_name) if fetch_online else ""
     quick_start = extract_quick_start(full_name, readme)
 
-    # Phân tích định hướng ứng dụng thực tế
     text_corpus = f"{full_name} {' '.join(topics)} {repo_item.get('description', '')}".lower()
     
     if any(k in text_corpus for k in ["agent", "agency", "hermes", "autonomous"]):
-        use_case = "Xây dựng hệ thống Trợ lý AI tự động thực thi công việc (Agentic AI)"
+        use_case = "Build Autonomous AI Agents & Multi-Agent Workflows"
     elif any(k in text_corpus for k in ["vtuber", "live2d", "voice", "waifu", "kalidokit"]):
-        use_case = "Tạo nhân vật ảo, bạn đồng hành AI có biểu cảm & giọng nói"
+        use_case = "Create Virtual Companions, VTubers & Voice-Driven Characters"
     elif any(k in text_corpus for k in ["cli", "terminal", "tool", "graph", "developer-tools"]):
-        use_case = "Tối ưu hóa hiệu suất lập trình & Phân tích mã nguồn"
+        use_case = "Developer Productivity, AST Code Intelligence & Terminal Tools"
     elif any(k in text_corpus for k in ["llm", "rag", "vlm", "ollama", "tts"]):
-        use_case = "Triển khai mô hình ngôn ngữ lớn & Trợ lý hỏi đáp tài liệu"
+        use_case = "Deploy Large Language Models, RAG Pipelines & Audio Vision Systems"
     else:
-        use_case = "Phát triển công cụ AI & Tự động hóa quy trình"
+        use_case = "Open-Source AI Tooling & Workflow Automation"
 
     return {
         "use_case": use_case,
@@ -62,10 +61,9 @@ def generate_ai_insight(repo_item, fetch_online=False):
     }
 
 def enrich_repos_with_insights(categories_data):
-    """Bổ sung AI Insights cho tất cả repo một cách siêu tốc"""
+    """Enrich all repositories with AI insights"""
     for cat in categories_data:
         for idx, r in enumerate(cat["repos"]):
-            # Chỉ tải online README cho top 2 repo mỗi danh mục để tối ưu tốc độ (< 2 giây)
             fetch_online = (idx < 2)
             r["ai_insight"] = generate_ai_insight(r, fetch_online=fetch_online)
     return categories_data

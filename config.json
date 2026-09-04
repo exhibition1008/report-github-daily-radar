@@ -2,7 +2,7 @@
   "categories": [
     {
       "id": "ai_agents_scifi",
-      "name": "🤖 AI Agents & Trợ lý Sci-Fi (JARVIS)",
+      "name": "🤖 AI Agents & Sci-Fi Assistants (JARVIS)",
       "query": "ai-agent OR jarvis",
       "min_stars": 30,
       "limit": 6
@@ -16,7 +16,7 @@
     },
     {
       "id": "cool_dev_tools",
-      "name": "🛠️ Công cụ Dev Siêu Tiện Ích & CLI đỉnh cao",
+      "name": "🛠️ Developer Tools & Powerful CLIs",
       "query": "developer-tools OR \"cli tool\"",
       "min_stars": 50,
       "limit": 6

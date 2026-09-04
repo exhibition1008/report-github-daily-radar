@@ -1,49 +1,48 @@
 # -*- coding: utf-8 -*-
 """
 GitHub Daily Radar - Reporter Module
-Xuất báo cáo dưới dạng Markdown và giao diện Web HTML trực quan, hiện đại tích hợp Velocity & AI Insights.
+Generate modern Markdown and HTML Dashboard reports in English.
 """
 
 import os
-import shutil
 from datetime import datetime
 
 def generate_markdown(categories_data, output_path):
-    today = datetime.now().strftime("%d/%m/%Y")
+    today = datetime.now().strftime("%Y-%m-%d")
     lines = []
     lines.append(f"# 📡 GitHub Daily Radar ({today})")
-    lines.append("> Tự động tổng hợp các dự án mã nguồn mở hot & thú vị nhất trên GitHub.\n")
+    lines.append("> Automated discovery & analytics of trending open-source projects on GitHub.\n")
     
     total_repos = sum(cat["count"] for cat in categories_data)
-    lines.append(f"**Tổng số dự án hôm nay:** {total_repos} dự án\n---\n")
+    lines.append(f"**Total Projects Today:** {total_repos} repositories\n---\n")
     
     for cat in categories_data:
         lines.append(f"## {cat['name']} ({cat['count']})")
         if not cat["repos"]:
-            lines.append("_Chưa có dự án mới nào đạt tiêu chuẩn lọc hôm nay._\n")
+            lines.append("_No new repositories matched filter criteria today._\n")
             continue
             
         for r in cat["repos"]:
             tags_str = " ".join([f"`#{t}`" for t in r["topics"]])
             velocity_str = f" `[{r.get('velocity_badge', '')}]`" if r.get("velocity_badge") else ""
             lines.append(f"### 🌟 [{r['full_name']}]({r['url']}){velocity_str}")
-            lines.append(f"- **Mô tả:** {r['description']}")
-            lines.append(f"- **Ngôn ngữ:** {r['language']} | ⭐ **Stars:** {r['stars_formatted']} | 🍴 **Forks:** {r['forks_formatted']}")
+            lines.append(f"- **Description:** {r['description']}")
+            lines.append(f"- **Language:** {r['language']} | ⭐ **Stars:** {r['stars_formatted']} | 🍴 **Forks:** {r['forks_formatted']}")
             if r.get("ai_insight"):
                 insight = r["ai_insight"]
-                lines.append(f"- **🎯 Ứng dụng thực tế:** {insight['use_case']}")
-                lines.append(f"- **⚡ Chạy thử:** `{insight['quick_start']}`")
+                lines.append(f"- **🎯 Use Case:** {insight['use_case']}")
+                lines.append(f"- **⚡ Quick Start:** `{insight['quick_start']}`")
             if tags_str:
-                lines.append(f"- **Thẻ:** {tags_str}")
+                lines.append(f"- **Tags:** {tags_str}")
             lines.append("")
         lines.append("---\n")
         
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-    print(f"[+] Đã xuất Markdown: {output_path}")
+    print(f"[+] Exported Markdown: {output_path}")
 
 def generate_html(categories_data, output_path):
-    today = datetime.now().strftime("%d/%m/%Y %H:%M")
+    today = datetime.now().strftime("%B %d, %Y - %H:%M")
     total_repos = sum(cat["count"] for cat in categories_data)
     
     header_tabs = []
@@ -61,18 +60,17 @@ def generate_html(categories_data, output_path):
             avatar_html = f'<img src="{r["owner_avatar"]}" class="avatar" alt="avatar" onerror="this.style.display=\'none\'">' if r["owner_avatar"] else ''
             topics_html = "".join([f'<span class="topic-pill">#{t}</span>' for t in r["topics"]])
             
-            # AI Insight box
             insight_html = ""
             if r.get("ai_insight"):
                 ins = r["ai_insight"]
                 insight_html = f'''
                 <div class="insight-box">
-                    <div class="insight-title">🎯 Ứng dụng: {ins['use_case']}</div>
+                    <div class="insight-title">🎯 Use Case: {ins['use_case']}</div>
                     <div class="quick-start-box"><code>{ins['quick_start']}</code></div>
                 </div>
                 '''
 
-            badge_text = r.get("velocity_badge", "✨ Nổi bật")
+            badge_text = r.get("velocity_badge", "✨ Featured")
             badge_class = r.get("velocity_class", "badge-normal")
             kw = f"{r['name']} {r['description']} {' '.join(r['topics'])} {r.get('velocity_badge', '')}".lower().replace('"', '')
             
@@ -98,17 +96,17 @@ def generate_html(categories_data, output_path):
                 <span>{r['language']}</span>
             </div>
         </div>
-        <a href="{r['url']}" target="_blank" class="btn-view">Xem Repo ↗</a>
+        <a href="{r['url']}" target="_blank" class="btn-view">View Repo ↗</a>
     </div>
 </div>'''
             cards_html.append(card)
             
-        cards_content = "\n".join(cards_html) if cards_html else '<p style="color:#94a3b8;">Không có dự án nào hôm nay.</p>'
+        cards_content = "\n".join(cards_html) if cards_html else '<p style="color:#94a3b8;">No repositories found today.</p>'
         
         sec = f'''<section class="category-section" id="sec-{cat['id']}" data-category="{cat['id']}">
     <div class="category-title">
         <span>{cat['name']}</span>
-        <span class="category-count">{cat['count']} dự án</span>
+        <span class="category-count">{cat['count']} repos</span>
     </div>
     <div class="grid">
         {cards_content}
@@ -119,7 +117,7 @@ def generate_html(categories_data, output_path):
     all_sections = "\n".join(sections_html)
 
     html_content = f'''<!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -394,16 +392,16 @@ def generate_html(categories_data, output_path):
         <header>
             <div class="badge-header">⚡ Live Discovery &amp; Velocity Radar</div>
             <h1>GitHub Daily Radar</h1>
-            <p class="subtitle">Tổng hợp {total_repos} dự án công nghệ & AI mã nguồn mở nổi bật nhất • {today}</p>
+            <p class="subtitle">Curated digest of {total_repos} trending open-source AI &amp; tech projects • {today}</p>
         </header>
         
         <div class="controls">
             <div class="tabs">
-                <button class="tab-btn active" onclick="filterTab('all')">Tất cả ({total_repos})</button>
+                <button class="tab-btn active" onclick="filterTab('all')">All ({total_repos})</button>
                 {tabs_html}
             </div>
             <div class="search-box">
-                <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm theo tên / tag..." oninput="searchCards()">
+                <input type="text" id="searchInput" placeholder="🔍 Search by name, topic, or keyword..." oninput="searchCards()">
             </div>
         </div>
 
@@ -440,10 +438,9 @@ def generate_html(categories_data, output_path):
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html_content)
-    print(f"[+] Đã xuất HTML Dashboard: {output_path}")
+    print(f"[+] Exported HTML Dashboard: {output_path}")
 
-    # Xuất thêm file index.html ở thư mục gốc để sẵn sàng cho GitHub Pages
     root_index = os.path.join(os.path.dirname(os.path.dirname(output_path)), "index.html")
     with open(root_index, "w", encoding="utf-8") as f:
         f.write(html_content)
-    print(f"[+] Đã tạo sẵn index.html cho GitHub Pages: {root_index}")
+    print(f"[+] Generated root index.html for GitHub Pages: {root_index}")

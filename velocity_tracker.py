@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 GitHub Daily Radar - Velocity Tracker Module
-Đo lường tốc độ tăng trưởng số sao (Star Velocity) của các repository theo ngày.
+Measure and analyze star growth rate (Star Velocity) across daily scans.
 """
 
 import os
@@ -32,7 +32,7 @@ def save_velocity_cache(cache_data):
 
 def track_and_enrich_velocity(categories_data):
     """
-    Tính toán delta số sao so với lần quét gần nhất và gắn nhãn huy hiệu tăng trưởng.
+    Calculate star delta compared to previous scans and assign growth badges.
     """
     cache = load_velocity_cache()
     today_str = datetime.now().strftime("%Y-%m-%d")
@@ -55,26 +55,24 @@ def track_and_enrich_velocity(categories_data):
                     r["star_growth"] = 0
                     r["star_growth_formatted"] = "0"
             else:
-                # Lần đầu phát hiện
                 r["star_growth"] = 0
-                r["star_growth_formatted"] = "Mới"
+                r["star_growth_formatted"] = "New"
 
-            # Gán huy hiệu tăng trưởng (Velocity Badge)
+            # Assign Velocity Badge in English
             growth = r["star_growth"]
             if growth >= 1000:
-                r["velocity_badge"] = "🔥 Siêu tân tinh (+1000⭐)"
+                r["velocity_badge"] = "🔥 Supernova (+1000⭐)"
                 r["velocity_class"] = "badge-supernova"
             elif growth >= 300:
-                r["velocity_badge"] = "⚡ Bứt phá (+300⭐)"
+                r["velocity_badge"] = "⚡ Breakout (+300⭐)"
                 r["velocity_class"] = "badge-hot"
             elif growth > 0:
-                r["velocity_badge"] = f"📈 Tăng {r['star_growth_formatted']}⭐"
+                r["velocity_badge"] = f"📈 Trending ({r['star_growth_formatted']}⭐)"
                 r["velocity_class"] = "badge-growing"
             else:
-                r["velocity_badge"] = "✨ Nổi bật"
+                r["velocity_badge"] = "✨ Featured"
                 r["velocity_class"] = "badge-normal"
 
-            # Cập nhật cache
             cache[full_name] = {
                 "last_stars": current_stars,
                 "last_date": today_str

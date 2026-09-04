@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 GitHub Daily Radar - Excel Exporter Module
-Xuất và lưu trữ lũy tiến dữ liệu dự án vào file Excel (.xlsx).
+Store and cumulatively update repository archive in an Excel spreadsheet (.xlsx).
 """
 
 import os
@@ -16,9 +16,7 @@ def get_default_excel_path():
 
 def append_or_update_excel(categories_data, excel_path=None):
     """
-    Lưu hoặc cập nhật danh sách repository vào file Excel lũy tiến.
-    Nếu repo đã tồn tại, cập nhật số sao và ngày quét gần nhất.
-    Nếu là repo mới, thêm dòng mới vào bảng.
+    Append or update repository entries in the cumulative Excel database.
     """
     if excel_path is None:
         excel_path = get_default_excel_path()
@@ -26,7 +24,6 @@ def append_or_update_excel(categories_data, excel_path=None):
     os.makedirs(os.path.dirname(excel_path), exist_ok=True)
     today_str = datetime.now().strftime("%Y-%m-%d")
 
-    # Mở file hiện có hoặc tạo file mới
     if os.path.exists(excel_path):
         try:
             wb = openpyxl.load_workbook(excel_path)
@@ -41,18 +38,19 @@ def append_or_update_excel(categories_data, excel_path=None):
         ws.title = "GitHub Radar Archive"
 
     headers = [
-        "Ngày quét", 
-        "Danh mục", 
-        "Tên Repository", 
+        "Scan Date", 
+        "Category", 
+        "Repository", 
         "Stars", 
         "Forks", 
-        "Ngôn ngữ", 
-        "Mô tả", 
+        "Velocity",
+        "Language", 
+        "Description", 
+        "Use Case",
         "Tags / Topics", 
-        "Link GitHub"
+        "GitHub Link"
     ]
 
-    # Thiết lập Header nếu sheet trống
     if ws.max_row == 1 and ws.cell(row=1, column=1).value is None:
         ws.append(headers)
         header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
@@ -71,8 +69,6 @@ def append_or_update_excel(categories_data, excel_path=None):
             cell.border = thin_border
         ws.row_dimensions[1].height = 28
 
-    # Lập chỉ mục các repo đã có sẵn (để tránh trùng lặp)
-    # key: repo_full_name -> row_index
     existing_repos = {}
     for row in range(2, ws.max_row + 1):
         repo_name = ws.cell(row=row, column=3).value
@@ -91,25 +87,29 @@ def append_or_update_excel(categories_data, excel_path=None):
         for r in cat["repos"]:
             full_name = r["full_name"].strip()
             tags_str = ", ".join(r["topics"])
+            velocity_str = r.get("velocity_badge", "Featured")
+            use_case_str = r.get("ai_insight", {}).get("use_case", "AI Tooling")
             
             if full_name in existing_repos:
-                # Cập nhật số liệu mới nhất
                 row_idx = existing_repos[full_name]
                 ws.cell(row=row_idx, column=1, value=today_str)
                 ws.cell(row=row_idx, column=4, value=r["stars"])
                 ws.cell(row=row_idx, column=5, value=r["forks"])
-                ws.cell(row=row_idx, column=7, value=r["description"])
+                ws.cell(row=row_idx, column=6, value=velocity_str)
+                ws.cell(row=row_idx, column=8, value=r["description"])
+                ws.cell(row=row_idx, column=9, value=use_case_str)
                 updated_count += 1
             else:
-                # Thêm dòng mới
                 new_row = [
                     today_str,
                     cat_name,
                     full_name,
                     r["stars"],
                     r["forks"],
+                    velocity_str,
                     r["language"],
                     r["description"],
+                    use_case_str,
                     tags_str,
                     r["url"]
                 ]
@@ -117,11 +117,10 @@ def append_or_update_excel(categories_data, excel_path=None):
                 current_row = ws.max_row
                 existing_repos[full_name] = current_row
                 
-                # Format dòng mới
                 for c in range(1, len(new_row) + 1):
                     cell = ws.cell(row=current_row, column=c)
                     cell.font = body_font
-                    if c in [1, 4, 5, 6]:
+                    if c in [1, 4, 5, 6, 7]:
                         cell.alignment = Alignment(horizontal="center", vertical="center")
                     else:
                         cell.alignment = Alignment(vertical="center")
@@ -129,18 +128,16 @@ def append_or_update_excel(categories_data, excel_path=None):
                     if current_row % 2 == 0:
                         cell.fill = alt_fill
                         
-                # Gán hyperlink cho cột Link GitHub
-                link_cell = ws.cell(row=current_row, column=9)
+                link_cell = ws.cell(row=current_row, column=11)
                 link_cell.hyperlink = r["url"]
                 link_cell.font = link_font
                 
                 new_count += 1
 
-    # Tự động căn chỉnh độ rộng cột
-    col_widths = {1: 14, 2: 30, 3: 28, 4: 12, 5: 12, 6: 15, 7: 50, 8: 30, 9: 40}
+    col_widths = {1: 14, 2: 32, 3: 28, 4: 12, 5: 12, 6: 18, 7: 15, 8: 50, 9: 35, 10: 30, 11: 40}
     for col_num, width in col_widths.items():
         ws.column_dimensions[get_column_letter(col_num)].width = width
 
     wb.save(excel_path)
-    print(f"[+] Đã lưu vào Excel: {excel_path} (+{new_count} mới, {updated_count} cập nhật, Tổng {len(existing_repos)} dự án trong kho)")
+    print(f"[+] Saved to Excel Archive: {excel_path} (+{new_count} new, {updated_count} updated, {len(existing_repos)} total repos)")
     return excel_path

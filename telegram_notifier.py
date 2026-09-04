@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 GitHub Daily Radar - Telegram Notifier Module
-Gửi thông báo tóm tắt dạng văn bản và file Audio Podcast qua Telegram Bot.
+Send structured text summaries and audio podcast voice notes via Telegram Bot in English.
 """
 
 import os
@@ -12,26 +12,26 @@ from datetime import datetime
 
 def send_telegram_radar(categories_data, telegram_config, audio_file_path=None):
     """
-    Gửi tin nhắn tóm tắt và file âm thanh podcast qua Telegram Bot.
+    Send daily digest and audio podcast via Telegram Bot in English.
     """
     if not telegram_config or not telegram_config.get("enabled", False):
-        print("[*] Telegram thông báo đang TẮT (Bạn có thể bật trong config.json).")
+        print("[*] Telegram notification is DISABLED (Enable in config.json).")
         return False
         
     bot_token = telegram_config.get("bot_token", "").strip()
     chat_id = telegram_config.get("chat_id", "").strip()
     
     if not bot_token or not chat_id or bot_token == "YOUR_BOT_TOKEN_HERE":
-        print("[!] Chưa cấu hình Telegram Bot Token hoặc Chat ID trong config.json.")
+        print("[!] Telegram Bot Token or Chat ID not configured.")
         return False
         
-    today = datetime.now().strftime("%d/%m/%Y")
+    today = datetime.now().strftime("%B %d, %Y")
     total_repos = sum(cat["count"] for cat in categories_data)
     
-    # 1. Gửi tin nhắn văn bản tóm tắt
+    # 1. Text Summary Message
     lines = []
     lines.append(f"📡 <b>GITHUB DAILY RADAR</b> (<code>{today}</code>)")
-    lines.append(f"<i>Tổng hợp {total_repos} dự án hot nhất hôm nay:</i>\n")
+    lines.append(f"<i>Curated digest of {total_repos} trending open-source projects today:</i>\n")
     
     for cat in categories_data:
         if not cat["repos"]:
@@ -45,11 +45,12 @@ def send_telegram_radar(categories_data, telegram_config, audio_file_path=None):
             desc = desc.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
             full_name = r["full_name"].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
             
-            lines.append(f"• <a href=\"{r['url']}\"><b>{full_name}</b></a> (⭐ {r['stars_formatted']})")
+            velocity_badge = f" <code>{r.get('velocity_badge', '')}</code>" if r.get("velocity_badge") else ""
+            lines.append(f"• <a href=\"{r['url']}\"><b>{full_name}</b></a> (⭐ {r['stars_formatted']}){velocity_badge}")
             lines.append(f"  <i>{desc}</i>")
         lines.append("")
         
-    lines.append(f"📊 <i>Đã tự động tổng hợp &amp; cập nhật vào file Excel!</i>")
+    lines.append(f"📊 <i>Automatically aggregated &amp; synced to your Excel archive!</i>")
     message_text = "\n".join(lines)
     
     api_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
@@ -65,33 +66,32 @@ def send_telegram_radar(categories_data, telegram_config, audio_file_path=None):
         req = urllib.request.Request(api_url, data=data, headers={"Content-Type": "application/json"})
         with urllib.request.urlopen(req, timeout=10) as response:
             if response.status == 200:
-                print(f"[+] Đã gửi bản tin văn bản đến Telegram (Chat ID: {chat_id})!")
+                print(f"[+] Sent text summary to Telegram (Chat ID: {chat_id})!")
     except Exception as e:
-        print(f"[!] Lỗi khi gửi tin nhắn Telegram: {e}")
+        print(f"[!] Error sending Telegram text message: {e}")
 
-    # 2. Gửi file Audio Podcast (nếu có)
+    # 2. Audio Podcast Voice Note
     if audio_file_path and os.path.exists(audio_file_path):
-        print("[*] Đang gửi file Audio Podcast đến Telegram...")
+        print("[*] Uploading Audio Podcast to Telegram...")
         voice_url = f"https://api.telegram.org/bot{bot_token}/sendVoice"
         try:
             with open(audio_file_path, "rb") as f:
                 files = {"voice": f}
                 data = {
                     "chat_id": chat_id,
-                    "caption": f"🎙️ Bản tin Audio Podcast ({today}) - Nghe tóm tắt nhanh dự án hot!"
+                    "caption": f"🎙️ Audio Podcast Digest ({today}) - Listen to today's trending tech!"
                 }
                 resp = requests.post(voice_url, data=data, files=files, timeout=30)
                 if resp.status_code == 200:
-                    print(f"[+] Đã gửi file Audio Podcast thành công đến Telegram!")
+                    print(f"[+] Sent Audio Podcast voice note to Telegram successfully!")
                 else:
-                    # Fallback sang sendAudio nếu sendVoice không được
                     audio_url = f"https://api.telegram.org/bot{bot_token}/sendAudio"
                     f.seek(0)
                     files = {"audio": f}
                     resp2 = requests.post(audio_url, data=data, files=files, timeout=30)
                     if resp2.status_code == 200:
-                        print(f"[+] Đã gửi Audio thành công!")
+                        print(f"[+] Sent Audio file to Telegram successfully!")
         except Exception as e:
-            print(f"[!] Lỗi khi gửi file âm thanh qua Telegram: {e}")
+            print(f"[!] Error uploading audio to Telegram: {e}")
 
     return True
