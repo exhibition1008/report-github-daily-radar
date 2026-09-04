@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 GitHub Daily Radar - Reporter Module
-Generate modern Markdown and HTML Dashboard reports in English.
+Generate modern Markdown and responsive HTML Dashboard reports in English with Interactive Visual Analytics & Charts.
 """
 
 import os
+import json
+from collections import Counter
 from datetime import datetime
 
 def generate_markdown(categories_data, output_path):
@@ -45,6 +47,38 @@ def generate_html(categories_data, output_path):
     today = datetime.now().strftime("%B %d, %Y - %H:%M")
     total_repos = sum(cat["count"] for cat in categories_data)
     
+    # 1. Compute Analytics Data for Charts
+    all_repos = []
+    lang_counter = Counter()
+    for cat in categories_data:
+        for r in cat["repos"]:
+            all_repos.append(r)
+            lang = r.get("language") or "Other"
+            if lang != "N/A":
+                lang_counter[lang] += 1
+            else:
+                lang_counter["Other"] += 1
+
+    # Languages chart data
+    top_langs = lang_counter.most_common(6)
+    lang_labels = [l[0] for l in top_langs]
+    lang_counts = [l[1] for l in top_langs]
+
+    # Top Star Leaderboard chart data
+    sorted_by_stars = sorted(all_repos, key=lambda x: x.get("stars", 0), reverse=True)[:8]
+    top_repo_names = [r["name"] for r in sorted_by_stars]
+    top_repo_stars = [r["stars"] for r in sorted_by_stars]
+
+    # Categories distribution chart data
+    cat_names = [c["name"].split(")")[-1].strip().replace("🤖", "").replace("✨", "").replace("🛠️", "").replace("🔥", "").strip() for c in categories_data]
+    cat_counts = [c["count"] for c in categories_data]
+
+    # Top stats
+    dominant_lang = lang_labels[0] if lang_labels else "Python"
+    total_stars_sum = sum(r.get("stars", 0) for r in all_repos)
+    avg_stars = int(total_stars_sum / max(len(all_repos), 1))
+
+    # Header tabs
     header_tabs = []
     for cat in categories_data:
         cid = cat['id']
@@ -53,6 +87,7 @@ def generate_html(categories_data, output_path):
         header_tabs.append(f'<button class="tab-btn" onclick="filterTab(\'{cid}\')">{cname} ({ccount})</button>')
     tabs_html = "\n".join(header_tabs)
 
+    # Repository cards sections
     sections_html = []
     for cat in categories_data:
         cards_html = []
@@ -121,8 +156,9 @@ def generate_html(categories_data, output_path):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Daily Radar - Live Dashboard</title>
+    <title>GitHub Daily Radar - Live Dashboard &amp; Analytics</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {{
             --bg-main: #0b0f19;
@@ -146,7 +182,7 @@ def generate_html(categories_data, output_path):
             background-image: radial-gradient(circle at 50% 0%, rgba(79, 172, 254, 0.12) 0%, transparent 60%);
         }}
         .container {{ max-width: 1240px; margin: 0 auto; }}
-        header {{ text-align: center; margin-bottom: 2.5rem; }}
+        header {{ text-align: center; margin-bottom: 2rem; }}
         .badge-header {{
             display: inline-flex;
             align-items: center;
@@ -171,6 +207,87 @@ def generate_html(categories_data, output_path):
             margin-bottom: 0.5rem;
         }}
         .subtitle {{ color: var(--text-secondary); font-size: 1.05rem; }}
+
+        /* KPI Cards Grid */
+        .kpi-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 2rem;
+        }}
+        .kpi-card {{
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
+            padding: 1.2rem;
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }}
+        .kpi-icon {{
+            font-size: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }}
+        .kpi-val {{
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #ffffff;
+        }}
+        .kpi-label {{
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }}
+
+        /* Analytics Drawer / Charts Grid */
+        .analytics-section {{
+            background: rgba(18, 24, 40, 0.85);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 1.8rem;
+            margin-bottom: 2.5rem;
+            backdrop-filter: blur(16px);
+        }}
+        .analytics-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }}
+        .analytics-title {{
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }}
+        .charts-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 24px;
+        }}
+        .chart-box {{
+            background: rgba(10, 15, 29, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 1.2rem;
+            height: 280px;
+            position: relative;
+        }}
+        .chart-label {{
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+
         .controls {{
             display: flex;
             flex-wrap: wrap;
@@ -394,6 +511,61 @@ def generate_html(categories_data, output_path):
             <h1>GitHub Daily Radar</h1>
             <p class="subtitle">Curated digest of {total_repos} trending open-source AI &amp; tech projects • {today}</p>
         </header>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-icon">📦</div>
+                <div>
+                    <div class="kpi-val">{total_repos}</div>
+                    <div class="kpi-label">Repositories Indexed</div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">⭐</div>
+                <div>
+                    <div class="kpi-val">{avg_stars:,}</div>
+                    <div class="kpi-label">Average Stars</div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">💻</div>
+                <div>
+                    <div class="kpi-val">{dominant_lang}</div>
+                    <div class="kpi-label">Top Language</div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">🚀</div>
+                <div>
+                    <div class="kpi-val">4 Tracks</div>
+                    <div class="kpi-label">Active Radars</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Analytics Section -->
+        <section class="analytics-section">
+            <div class="analytics-header">
+                <div class="analytics-title">
+                    <span>📊 Visual Analytics &amp; Market Intelligence</span>
+                </div>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <div class="chart-label">🍩 Programming Language Share</div>
+                    <canvas id="langChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-label">🏆 Top Star Leaderboard</div>
+                    <canvas id="starsChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-label">🏷️ Track Repository Volume</div>
+                    <canvas id="catChart"></canvas>
+                </div>
+            </div>
+        </section>
         
         <div class="controls">
             <div class="tabs">
@@ -407,7 +579,83 @@ def generate_html(categories_data, output_path):
 
         {all_sections}
     </div>
+
     <script>
+        // Chart.js Visualizations
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+
+        // 1. Language Doughnut Chart
+        new Chart(document.getElementById('langChart'), {{
+            type: 'doughnut',
+            data: {{
+                labels: {json.dumps(lang_labels)},
+                datasets: [{{
+                    data: {json.dumps(lang_counts)},
+                    backgroundColor: ['#00f2fe', '#4facfe', '#9d4edd', '#fbbf24', '#10b981', '#f43f5e'],
+                    borderWidth: 0
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{
+                    legend: {{ position: 'right', labels: {{ boxWidth: 12, font: {{ size: 11 }} }} }}
+                }}
+            }}
+        }});
+
+        // 2. Top Stars Bar Chart
+        new Chart(document.getElementById('starsChart'), {{
+            type: 'bar',
+            data: {{
+                labels: {json.dumps(top_repo_names)},
+                datasets: [{{
+                    label: 'Stars',
+                    data: {json.dumps(top_repo_stars)},
+                    backgroundColor: 'rgba(79, 172, 254, 0.7)',
+                    borderColor: '#4facfe',
+                    borderRadius: 6,
+                    borderWidth: 1
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {{ legend: {{ display: false }} }},
+                scales: {{
+                    x: {{ grid: {{ color: 'rgba(255, 255, 255, 0.05)' }} }},
+                    y: {{ grid: {{ display: false }}, ticks: {{ font: {{ size: 10 }} }} }}
+                }}
+            }}
+        }});
+
+        // 3. Category Volume Chart
+        new Chart(document.getElementById('catChart'), {{
+            type: 'polarArea',
+            data: {{
+                labels: {json.dumps(cat_names)},
+                datasets: [{{
+                    data: {json.dumps(cat_counts)},
+                    backgroundColor: [
+                        'rgba(0, 242, 254, 0.5)',
+                        'rgba(157, 78, 221, 0.5)',
+                        'rgba(251, 191, 36, 0.5)',
+                        'rgba(16, 185, 129, 0.5)'
+                    ],
+                    borderWidth: 0
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{ legend: {{ position: 'bottom', labels: {{ boxWidth: 10, font: {{ size: 10 }} }} }} }},
+                scales: {{ r: {{ grid: {{ color: 'rgba(255, 255, 255, 0.05)' }}, ticks: {{ display: false }} }} }}
+            }}
+        }});
+
+        // Filter and Search Functions
         function filterTab(catId) {{
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
