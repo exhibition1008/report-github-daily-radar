@@ -8,9 +8,18 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   run-radar:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
 
     steps:
@@ -35,5 +44,17 @@ jobs:
         run: |
           git config --global user.name "GitHub Daily Radar Bot"
           git config --global user.email "radar-bot@users.noreply.github.com"
-          git add reports/ cache_radar.json
+          git add reports/ cache_radar.json cache_velocity.json index.html
           git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Auto Update: GitHub Daily Radar [$(date +'%Y-%m-%d')]" && git push)
+
+      - name: 🌐 Thiết lập GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: 📦 Đóng gói artifact cho GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: 🚀 Triển khai Web Dashboard lên GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

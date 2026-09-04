@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 GitHub Daily Radar - Reporter Module
-Xuất báo cáo dưới dạng Markdown và giao diện Web HTML trực quan, hiện đại.
+Xuất báo cáo dưới dạng Markdown và giao diện Web HTML trực quan, hiện đại tích hợp Velocity & AI Insights.
 """
 
 import os
+import shutil
 from datetime import datetime
 
 def generate_markdown(categories_data, output_path):
-    """
-    Tạo báo cáo dạng Markdown.
-    """
     today = datetime.now().strftime("%d/%m/%Y")
     lines = []
     lines.append(f"# 📡 GitHub Daily Radar ({today})")
@@ -27,9 +25,14 @@ def generate_markdown(categories_data, output_path):
             
         for r in cat["repos"]:
             tags_str = " ".join([f"`#{t}`" for t in r["topics"]])
-            lines.append(f"### 🌟 [{r['full_name']}]({r['url']})")
+            velocity_str = f" `[{r.get('velocity_badge', '')}]`" if r.get("velocity_badge") else ""
+            lines.append(f"### 🌟 [{r['full_name']}]({r['url']}){velocity_str}")
             lines.append(f"- **Mô tả:** {r['description']}")
             lines.append(f"- **Ngôn ngữ:** {r['language']} | ⭐ **Stars:** {r['stars_formatted']} | 🍴 **Forks:** {r['forks_formatted']}")
+            if r.get("ai_insight"):
+                insight = r["ai_insight"]
+                lines.append(f"- **🎯 Ứng dụng thực tế:** {insight['use_case']}")
+                lines.append(f"- **⚡ Chạy thử:** `{insight['quick_start']}`")
             if tags_str:
                 lines.append(f"- **Thẻ:** {tags_str}")
             lines.append("")
@@ -40,9 +43,6 @@ def generate_markdown(categories_data, output_path):
     print(f"[+] Đã xuất Markdown: {output_path}")
 
 def generate_html(categories_data, output_path):
-    """
-    Tạo báo cáo giao diện Web Dashboard (Sci-Fi / Modern Dark Mode).
-    """
     today = datetime.now().strftime("%d/%m/%Y %H:%M")
     total_repos = sum(cat["count"] for cat in categories_data)
     
@@ -60,17 +60,35 @@ def generate_html(categories_data, output_path):
         for r in cat["repos"]:
             avatar_html = f'<img src="{r["owner_avatar"]}" class="avatar" alt="avatar" onerror="this.style.display=\'none\'">' if r["owner_avatar"] else ''
             topics_html = "".join([f'<span class="topic-pill">#{t}</span>' for t in r["topics"]])
-            kw = f"{r['name']} {r['description']} {' '.join(r['topics'])}".lower().replace('"', '')
+            
+            # AI Insight box
+            insight_html = ""
+            if r.get("ai_insight"):
+                ins = r["ai_insight"]
+                insight_html = f'''
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Ứng dụng: {ins['use_case']}</div>
+                    <div class="quick-start-box"><code>{ins['quick_start']}</code></div>
+                </div>
+                '''
+
+            badge_text = r.get("velocity_badge", "✨ Nổi bật")
+            badge_class = r.get("velocity_class", "badge-normal")
+            kw = f"{r['name']} {r['description']} {' '.join(r['topics'])} {r.get('velocity_badge', '')}".lower().replace('"', '')
             
             card = f'''<div class="card" data-keywords="{kw}">
-    <div class="card-header">
-        {avatar_html}
-        <div>
-            <a href="{r['url']}" target="_blank" class="repo-title">{r['full_name']}</a>
+    <div>
+        <div class="card-header">
+            {avatar_html}
+            <div>
+                <a href="{r['url']}" target="_blank" class="repo-title">{r['full_name']}</a>
+            </div>
+            <span class="velocity-pill {badge_class}">{badge_text}</span>
         </div>
+        <div class="repo-desc">{r['description']}</div>
+        {insight_html}
+        <div class="topics">{topics_html}</div>
     </div>
-    <div class="repo-desc">{r['description']}</div>
-    <div class="topics">{topics_html}</div>
     <div class="card-footer">
         <div class="meta-stats">
             <div class="stat-item stat-star">⭐ {r['stars_formatted']}</div>
@@ -105,12 +123,12 @@ def generate_html(categories_data, output_path):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Daily Radar - {today}</title>
+    <title>GitHub Daily Radar - Live Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {{
             --bg-main: #0b0f19;
-            --bg-card: rgba(23, 32, 54, 0.7);
+            --bg-card: rgba(23, 32, 54, 0.75);
             --border-card: rgba(99, 140, 255, 0.15);
             --text-primary: #f8fafc;
             --text-secondary: #94a3b8;
@@ -118,6 +136,7 @@ def generate_html(categories_data, output_path):
             --accent-blue: #4facfe;
             --accent-purple: #9d4edd;
             --accent-gold: #fbbf24;
+            --accent-green: #10b981;
         }}
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
         body {{
@@ -243,6 +262,7 @@ def generate_html(categories_data, output_path):
         .card-header {{
             display: flex;
             align-items: flex-start;
+            justify-content: space-between;
             gap: 12px;
             margin-bottom: 0.8rem;
         }}
@@ -251,6 +271,7 @@ def generate_html(categories_data, output_path):
             height: 40px;
             border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
         }}
         .repo-title {{
             font-size: 1.1rem;
@@ -261,22 +282,57 @@ def generate_html(categories_data, output_path):
             word-break: break-all;
         }}
         .repo-title:hover {{ color: var(--accent-cyan); }}
+        .velocity-pill {{
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }}
+        .badge-supernova {{ background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }}
+        .badge-hot {{ background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }}
+        .badge-growing {{ background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }}
+        .badge-normal {{ background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); }}
         .repo-desc {{
             color: var(--text-secondary);
             font-size: 0.9rem;
             line-height: 1.55;
-            margin-bottom: 1.1rem;
-            flex-grow: 1;
+            margin-bottom: 0.9rem;
             display: -webkit-box;
-            -webkit-line-clamp: 3;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }}
+        .insight-box {{
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }}
+        .insight-title {{
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }}
+        .quick-start-box {{
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--accent-cyan);
+            background: rgba(0, 242, 254, 0.08);
+            padding: 3px 6px;
+            border-radius: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }}
         .topics {{
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            margin-bottom: 1.1rem;
+            margin-bottom: 1rem;
         }}
         .topic-pill {{
             background: rgba(255, 255, 255, 0.05);
@@ -336,7 +392,7 @@ def generate_html(categories_data, output_path):
 <body>
     <div class="container">
         <header>
-            <div class="badge-header">⚡ Live Discovery System</div>
+            <div class="badge-header">⚡ Live Discovery &amp; Velocity Radar</div>
             <h1>GitHub Daily Radar</h1>
             <p class="subtitle">Tổng hợp {total_repos} dự án công nghệ & AI mã nguồn mở nổi bật nhất • {today}</p>
         </header>
@@ -385,3 +441,9 @@ def generate_html(categories_data, output_path):
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html_content)
     print(f"[+] Đã xuất HTML Dashboard: {output_path}")
+
+    # Xuất thêm file index.html ở thư mục gốc để sẵn sàng cho GitHub Pages
+    root_index = os.path.join(os.path.dirname(os.path.dirname(output_path)), "index.html")
+    with open(root_index, "w", encoding="utf-8") as f:
+        f.write(html_content)
+    print(f"[+] Đã tạo sẵn index.html cho GitHub Pages: {root_index}")

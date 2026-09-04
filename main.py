@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-GitHub Daily Radar - Main Entry Point
-Chạy công cụ quét, xuất báo cáo Markdown/HTML/Excel, sinh file Audio Podcast, gửi Telegram và đồng bộ Google Sheets.
+GitHub Daily Radar - Main Entry Point (Ultimate 5-in-1 Edition)
+Chạy công cụ quét, tính toán Velocity, phân tích AI Insight, xuất Web/Excel, sinh Podcast và gửi Telegram/Google Sheets.
 """
 
 import os
@@ -19,6 +19,8 @@ if hasattr(sys.stderr, "reconfigure"):
 
 from fetcher import fetch_all_categories
 from formatter import process_radar_data
+from velocity_tracker import track_and_enrich_velocity
+from ai_insight import enrich_repos_with_insights
 from reporter import generate_markdown, generate_html
 from excel_exporter import append_or_update_excel
 from telegram_notifier import send_telegram_radar
@@ -44,7 +46,7 @@ def run_radar():
     os.makedirs(reports_dir, exist_ok=True)
 
     print("=" * 60)
-    print("       🚀 KHỞI ĐỘNG GITHUB DAILY RADAR (DISCOVERY TOOL)       ")
+    print("       🚀 KHỞI ĐỘNG GITHUB DAILY RADAR (ULTIMATE EDITION)     ")
     print("=" * 60)
 
     config = load_config(config_path)
@@ -55,8 +57,16 @@ def run_radar():
     # 2. Xử lý và format dữ liệu
     print("\n[*] Đang tổng hợp và phân loại dự án...")
     processed_data = process_radar_data(raw_data)
+
+    # 3. Tính toán Star Velocity Tracker 🔥
+    print("\n[*] 📈 Đang phân tích tốc độ tăng trưởng sao (Star Velocity)...")
+    processed_data = track_and_enrich_velocity(processed_data)
+
+    # 4. Trích xuất AI Deep Insight & Quick Start 🧠
+    print("\n[*] 🧠 Đang phân tích AI Insight & Lệnh cài đặt nhanh...")
+    processed_data = enrich_repos_with_insights(processed_data)
     
-    # 3. Xuất file báo cáo Markdown & HTML
+    # 5. Xuất file báo cáo Markdown & HTML (kèm index.html cho GitHub Pages)
     date_str = datetime.now().strftime("%Y-%m-%d")
     md_file = os.path.join(reports_dir, f"radar_{date_str}.md")
     html_file = os.path.join(reports_dir, f"radar_{date_str}.html")
@@ -70,35 +80,36 @@ def run_radar():
     if settings.get("export_html", True):
         generate_html(processed_data, html_file)
 
-    # 4. Sinh file âm thanh Audio Podcast
+    # 6. Sinh file âm thanh Audio Podcast 🎙️
     audio_path = None
     if settings.get("generate_podcast", True):
-        print("\n[*] Đang tổng hợp bản tin Radio Audio Podcast...")
+        print("\n[*] 🎙️ Đang tổng hợp bản tin Radio Audio Podcast...")
         audio_path = generate_audio_podcast(processed_data, audio_file)
 
-    # 5. Gửi tin nhắn và file Voice qua Telegram Bot
-    print("\n[*] Đang kiểm tra cấu hình Telegram...")
+    # 7. Gửi tin nhắn và file Voice qua Telegram Bot 📱
+    print("\n[*] 📱 Đang kiểm tra cấu hình Telegram...")
     send_telegram_radar(processed_data, config.get("telegram", {}), audio_file_path=audio_path)
 
-    # 6. Lưu và cập nhật lũy tiến vào file Excel Offline
+    # 8. Lưu và cập nhật lũy tiến vào file Excel Offline 📊
     if settings.get("export_excel", True):
-        print("\n[*] Đang đồng bộ và lưu trữ vào cơ sở dữ liệu Excel (Offline)...")
+        print("\n[*] 📊 Đang đồng bộ và lưu trữ vào cơ sở dữ liệu Excel (Offline)...")
         append_or_update_excel(processed_data, excel_file)
 
-    # 7. Đồng bộ lên Google Sheets Online
-    print("\n[*] Đang kiểm tra cấu hình Google Sheets Online...")
+    # 9. Đồng bộ lên Google Sheets Online ☁️
+    print("\n[*] ☁️ Đang kiểm tra cấu hình Google Sheets Online...")
     sync_to_google_sheets(processed_data, config.get("google_sheets", {}))
         
     print("\n" + "=" * 60)
-    print("✅ HOÀN THÀNH TOÀN BỘ QUY TRÌNH!")
+    print("✅ HOÀN THÀNH TOÀN BỘ QUY TRÌNH ULTIMATE RADAR!")
     print(f"   📄 Markdown: {md_file}")
     print(f"   🌐 HTML Dashboard: {html_file}")
     print(f"   📊 Excel Archive: {excel_file}")
     if audio_path:
         print(f"   🎙️ Audio Podcast: {audio_path}")
+    print(f"   🌐 GitHub Pages Ready: index.html")
     print("=" * 60)
 
-    # 8. Tự động mở Dashboard (nếu bật)
+    # 10. Tự động mở Dashboard (nếu bật)
     if not args.no_open and settings.get("auto_open_browser", False):
         print("\n[+] Đang mở Web Dashboard trên trình duyệt của bạn...")
         webbrowser.open(f"file:///{os.path.abspath(html_file)}")
