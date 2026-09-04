@@ -1,0 +1,49 @@
+{
+  "categories": [
+    {
+      "id": "ai_agents_scifi",
+      "name": "🤖 AI Agents & Trợ lý Sci-Fi (JARVIS)",
+      "query": "ai-agent OR jarvis",
+      "min_stars": 30,
+      "limit": 6
+    },
+    {
+      "id": "anime_vtuber_ai",
+      "name": "✨ Anime & VTuber AI (Live2D, Waifu, Voice)",
+      "query": "vtuber OR live2d",
+      "min_stars": 20,
+      "limit": 6
+    },
+    {
+      "id": "cool_dev_tools",
+      "name": "🛠️ Công cụ Dev Siêu Tiện Ích & CLI đỉnh cao",
+      "query": "developer-tools OR \"cli tool\"",
+      "min_stars": 50,
+      "limit": 6
+    },
+    {
+      "id": "frontier_llm_vision",
+      "name": "🔥 Frontier LLM, Voice & Computer Vision",
+      "query": "llm OR \"voice cloning\"",
+      "min_stars": 50,
+      "limit": 6
+    }
+  ],
+  "settings": {
+    "sort_by": "stars",
+    "order": "desc",
+    "export_html": true,
+    "export_markdown": true,
+    "export_excel": true,
+    "auto_open_browser": false
+  },
+  "telegram": {
+    "enabled": true,
+    "bot_token": "8856851129:AAHK-SWhJLE-MenkVunYQS9hdsaNzps9yxo",
+    "chat_id": "8197959238"
+  },
+  "google_sheets": {
+    "enabled": false,
+    "webhook_url": "YOUR_GOOGLE_APPS_SCRIPT_URL_HERE"
+  }
+}
