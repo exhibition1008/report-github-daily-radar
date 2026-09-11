@@ -2,9 +2,9 @@ name: GitHub Daily Radar
 
 on:
   schedule:
-    # Chạy tự động vào lúc 00:00 UTC (tức 7:00 AM giờ Việt Nam) mỗi ngày
+    # Run automatically every day at 00:00 UTC (7:00 AM VN time)
     - cron: '0 0 * * *'
-  workflow_dispatch: # Cho phép bạn bấm nút "Run workflow" để chạy thử bất kỳ lúc nào trên web
+  workflow_dispatch: # Allows manual trigger from GitHub web UI
 
 permissions:
   contents: write
@@ -12,49 +12,49 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: "radar-workflow"
   cancel-in-progress: false
 
 jobs:
   run-radar:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
 
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      - name: 🐍 Thiết lập môi trường Python
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: 📦 Cài đặt thư viện
+      - name: 📦 Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: 🚀 Chạy GitHub Daily Radar
+      - name: 🚀 Run GitHub Daily Radar
         run: |
           python main.py --no-open
 
-      - name: 💾 Tự động lưu & Commit file Excel/Báo cáo mới lên GitHub
+      - name: 💾 Commit & Push updated reports to GitHub
         run: |
           git config --global user.name "GitHub Daily Radar Bot"
           git config --global user.email "radar-bot@users.noreply.github.com"
           git add reports/ cache_radar.json cache_velocity.json index.html
           git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Auto Update: GitHub Daily Radar [$(date +'%Y-%m-%d')]" && git push)
 
-      - name: 🌐 Thiết lập GitHub Pages
+      - name: 🌐 Setup GitHub Pages
+        continue-on-error: true
         uses: actions/configure-pages@v5
 
-      - name: 📦 Đóng gói artifact cho GitHub Pages
+      - name: 📦 Upload artifact for GitHub Pages
+        continue-on-error: true
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
 
-      - name: 🚀 Triển khai Web Dashboard lên GitHub Pages
+      - name: 🚀 Deploy Web Dashboard to GitHub Pages
+        continue-on-error: true
         id: deployment
         uses: actions/deploy-pages@v4
