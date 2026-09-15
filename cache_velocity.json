@@ -1,90 +1,94 @@
 {
   "NousResearch/hermes-agent": {
-    "last_stars": 245183,
-    "last_date": "2026-09-14"
+    "last_stars": 245539,
+    "last_date": "2026-09-15"
   },
   "langgenius/dify": {
-    "last_stars": 155628,
-    "last_date": "2026-09-14"
+    "last_stars": 155738,
+    "last_date": "2026-09-15"
   },
   "langflow-ai/langflow": {
-    "last_stars": 154748,
-    "last_date": "2026-09-14"
+    "last_stars": 154806,
+    "last_date": "2026-09-15"
   },
   "msitarzewski/agency-agents": {
-    "last_stars": 152151,
-    "last_date": "2026-09-14"
+    "last_stars": 152357,
+    "last_date": "2026-09-15"
   },
   "x1xhlol/system-prompts-and-models-of-ai-tools": {
-    "last_stars": 143603,
-    "last_date": "2026-09-14"
+    "last_stars": 143632,
+    "last_date": "2026-09-15"
   },
   "Shubhamsaboo/awesome-llm-apps": {
     "last_stars": 137973,
     "last_date": "2026-09-14"
   },
   "moeru-ai/airi": {
-    "last_stars": 49110,
-    "last_date": "2026-09-14"
+    "last_stars": 49134,
+    "last_date": "2026-09-15"
   },
   "Open-LLM-VTuber/Open-LLM-VTuber": {
-    "last_stars": 13726,
-    "last_date": "2026-09-14"
+    "last_stars": 13761,
+    "last_date": "2026-09-15"
   },
   "stevenjoezhang/live2d-widget": {
-    "last_stars": 10955,
-    "last_date": "2026-09-14"
+    "last_stars": 10957,
+    "last_date": "2026-09-15"
   },
   "Aikoyori/ProgrammingVTuberLogos": {
     "last_stars": 6235,
-    "last_date": "2026-09-14"
+    "last_date": "2026-09-15"
   },
   "yeemachine/kalidokit": {
-    "last_stars": 5704,
-    "last_date": "2026-09-14"
+    "last_stars": 5706,
+    "last_date": "2026-09-15"
   },
   "EYHN/hexo-helper-live2d": {
     "last_stars": 3875,
-    "last_date": "2026-09-14"
+    "last_date": "2026-09-15"
   },
   "affaan-m/ECC": {
-    "last_stars": 257785,
-    "last_date": "2026-09-14"
+    "last_stars": 258427,
+    "last_date": "2026-09-15"
   },
   "DietrichGebert/ponytail": {
-    "last_stars": 137393,
-    "last_date": "2026-09-14"
+    "last_stars": 138490,
+    "last_date": "2026-09-15"
   },
   "Graphify-Labs/graphify": {
-    "last_stars": 116456,
-    "last_date": "2026-09-14"
+    "last_stars": 116758,
+    "last_date": "2026-09-15"
   },
   "puppeteer/puppeteer": {
     "last_stars": 95579,
-    "last_date": "2026-09-14"
+    "last_date": "2026-09-15"
   },
   "OpenHands/OpenHands": {
-    "last_stars": 87790,
-    "last_date": "2026-09-14"
+    "last_stars": 87926,
+    "last_date": "2026-09-15"
   },
   "hoppscotch/hoppscotch": {
     "last_stars": 80302,
     "last_date": "2026-09-14"
   },
   "multica-ai/andrej-karpathy-skills": {
-    "last_stars": 212797,
-    "last_date": "2026-09-14"
+    "last_stars": 213024,
+    "last_date": "2026-09-15"
   },
   "Significant-Gravitas/AutoGPT": {
-    "last_stars": 187313,
-    "last_date": "2026-09-14"
+    "last_stars": 187344,
+    "last_date": "2026-09-15"
   },
   "ollama/ollama": {
-    "last_stars": 180838,
-    "last_date": "2026-09-14"
+    "last_stars": 180967,
+    "last_date": "2026-09-15"
   },
   "firecrawl/firecrawl": {
-    "last_stars": 180017,
-    "last_date": "2026-09-14"
+    "last_stars": 180456,
+    "last_date": "2026-09-15"
+  },
+  "rtk-ai/rtk": {
+    "last_stars": 80397,
+    "last_date": "2026-09-15"
   }
 }
