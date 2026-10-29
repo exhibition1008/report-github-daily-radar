@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Daily Radar - Live Dashboard &amp; Analytics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: rgba(23, 32, 54, 0.75);
+            --border-card: rgba(99, 140, 255, 0.15);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-cyan: #00f2fe;
+            --accent-blue: #4facfe;
+            --accent-purple: #9d4edd;
+            --accent-gold: #fbbf24;
+            --accent-green: #10b981;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            padding: 2.5rem 1.5rem;
+            background-image: radial-gradient(circle at 50% 0%, rgba(79, 172, 254, 0.12) 0%, transparent 60%);
+        }
+        .container { max-width: 1240px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 2rem; }
+        .badge-header {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            padding: 6px 16px;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        h1 {
+            font-size: 2.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 30%, var(--accent-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle { color: var(--text-secondary); font-size: 1.05rem; }
+
+        /* KPI Cards Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 2rem;
+        }
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 14px;
+            padding: 1.2rem;
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .kpi-icon {
+            font-size: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .kpi-val {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+        .kpi-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Analytics Drawer / Charts Grid */
+        .analytics-section {
+            background: rgba(18, 24, 40, 0.85);
+            border: 1px solid var(--border-card);
+            border-radius: 20px;
+            padding: 1.8rem;
+            margin-bottom: 2.5rem;
+            backdrop-filter: blur(16px);
+        }
+        .analytics-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+        .analytics-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 24px;
+        }
+        .chart-box {
+            background: rgba(10, 15, 29, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 1.2rem;
+            height: 280px;
+            position: relative;
+        }
+        .chart-label {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+            background: rgba(18, 24, 40, 0.85);
+            padding: 14px 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border-card);
+            backdrop-filter: blur(12px);
+        }
+        .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tab-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .tab-btn:hover { color: var(--text-primary); background: rgba(255, 255, 255, 0.05); }
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.2), rgba(0, 242, 254, 0.2));
+            color: var(--accent-cyan);
+            border-color: rgba(0, 242, 254, 0.4);
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: rgba(10, 15, 29, 0.8);
+            border: 1px solid var(--border-card);
+            border-radius: 10px;
+            padding: 8px 14px;
+            width: 280px;
+        }
+        .search-box input {
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            width: 100%;
+            font-size: 0.9rem;
+        }
+        .category-section { margin-bottom: 3.5rem; }
+        .category-title {
+            font-size: 1.45rem;
+            font-weight: 700;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #ffffff;
+        }
+        .category-count {
+            font-size: 0.8rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            padding: 3px 10px;
+            border-radius: 99px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 22px;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            padding: 1.3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(12px);
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 242, 254, 0.4);
+            box-shadow: 0 12px 30px rgba(0, 242, 254, 0.08);
+        }
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 0.8rem;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+        .repo-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            transition: color 0.2s;
+            word-break: break-all;
+        }
+        .repo-title:hover { color: var(--accent-cyan); }
+        .velocity-pill {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 6px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .badge-supernova { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+        .badge-hot { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
+        .badge-growing { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .badge-normal { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); }
+        .repo-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.55;
+            margin-bottom: 0.9rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .insight-box {
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .insight-title {
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .quick-start-box {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--accent-cyan);
+            background: rgba(0, 242, 254, 0.08);
+            padding: 3px 6px;
+            border-radius: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .topics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 1rem;
+        }
+        .topic-pill {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding-top: 0.9rem;
+            font-size: 0.85rem;
+        }
+        .meta-stats { display: flex; align-items: center; gap: 14px; }
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .stat-star { color: var(--accent-gold); }
+        .lang-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+        }
+        .lang-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .btn-view {
+            background: linear-gradient(135deg, rgba(79, 172, 254, 0.15), rgba(0, 242, 254, 0.15));
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            padding: 6px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.82rem;
+            transition: all 0.2s;
+        }
+        .btn-view:hover {
+            background: var(--accent-cyan);
+            color: #0b0f19;
+            box-shadow: 0 0 14px rgba(0, 242, 254, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="badge-header">⚡ Live Discovery &amp; Velocity Radar</div>
+            <h1>GitHub Daily Radar</h1>
+            <p class="subtitle">Curated digest of 24 trending open-source AI &amp; tech projects • October 29, 2026 - 03:15</p>
+        </header>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-icon">📦</div>
+                <div>
+                    <div class="kpi-val">24</div>
+                    <div class="kpi-label">Repositories Indexed</div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">⭐</div>
+                <div>
+                    <div class="kpi-val">165,439</div>
+                    <div class="kpi-label">Average Stars</div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">💻</div>
+                <div>
+                    <div class="kpi-val">TypeScript</div>
+                    <div class="kpi-label">Top Language</div>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">🚀</div>
+                <div>
+                    <div class="kpi-val">4 Tracks</div>
+                    <div class="kpi-label">Active Radars</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Analytics Section -->
+        <section class="analytics-section">
+            <div class="analytics-header">
+                <div class="analytics-title">
+                    <span>📊 Visual Analytics &amp; Market Intelligence</span>
+                </div>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <div class="chart-label">🍩 Programming Language Share</div>
+                    <canvas id="langChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-label">🏆 Top Star Leaderboard</div>
+                    <canvas id="starsChart"></canvas>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-label">🏷️ Track Repository Volume</div>
+                    <canvas id="catChart"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <div class="controls">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="filterTab('all')">All (24)</button>
+                <button class="tab-btn" onclick="filterTab('ai_agents_scifi')">🤖 AI Agents & Sci-Fi Assistants (JARVIS) (6)</button>
+<button class="tab-btn" onclick="filterTab('anime_vtuber_ai')">✨ Anime & VTuber AI (Live2D, Waifu, Voice) (6)</button>
+<button class="tab-btn" onclick="filterTab('cool_dev_tools')">🛠️ Developer Tools & Powerful CLIs (6)</button>
+<button class="tab-btn" onclick="filterTab('frontier_llm_vision')">🔥 Frontier LLM, Voice & Computer Vision (6)</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Search by name, topic, or keyword..." oninput="searchCards()">
+            </div>
+        </div>
+
+        <section class="category-section" id="sec-ai_agents_scifi" data-category="ai_agents_scifi">
+    <div class="category-title">
+        <span>🤖 AI Agents & Sci-Fi Assistants (JARVIS)</span>
+        <span class="category-count">6 repos</span>
+    </div>
+    <div class="grid">
+        <div class="card" data-keywords="hermes-agent the agent that grows with you ai ai-agent ai-agents anthropic chatgpt ⚡ breakout (+300⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/134168893?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/NousResearch/hermes-agent" target="_blank" class="repo-title">NousResearch/hermes-agent</a>
+            </div>
+            <span class="velocity-pill badge-hot">⚡ Breakout (+300⭐)</span>
+        </div>
+        <div class="repo-desc">The agent that grows with you</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/NousResearch/hermes-agent.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#ai</span><span class="topic-pill">#ai-agent</span><span class="topic-pill">#ai-agents</span><span class="topic-pill">#anthropic</span><span class="topic-pill">#chatgpt</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 258.1k</div>
+            <div class="stat-item">🍴 56.6k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3572A5"></span>
+                <span>Python</span>
+            </div>
+        </div>
+        <a href="https://github.com/NousResearch/hermes-agent" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="firecrawl supercharge your ai agents with data from the web and beyond. building the library for superintelligence. 🔥 ai ai-agents ai-crawler ai-scraping ai-search ⚡ breakout (+300⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/135057108?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/firecrawl/firecrawl" target="_blank" class="repo-title">firecrawl/firecrawl</a>
+            </div>
+            <span class="velocity-pill badge-hot">⚡ Breakout (+300⭐)</span>
+        </div>
+        <div class="repo-desc">Supercharge your AI agents with data from the web and beyond. Building the library for superintelligence. 🔥</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/firecrawl/firecrawl.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#ai</span><span class="topic-pill">#ai-agents</span><span class="topic-pill">#ai-crawler</span><span class="topic-pill">#ai-scraping</span><span class="topic-pill">#ai-search</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 196.5k</div>
+            <div class="stat-item">🍴 10.4k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3178C6"></span>
+                <span>TypeScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/firecrawl/firecrawl" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="ponytail makes your ai agent think like the laziest senior dev in the room. the best code is the code you never wrote. agent-skills ai-agents claude claude-code claude-code-plugin 🔥 supernova (+1000⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/137048761?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/DietrichGebert/ponytail" target="_blank" class="repo-title">DietrichGebert/ponytail</a>
+            </div>
+            <span class="velocity-pill badge-supernova">🔥 Supernova (+1000⭐)</span>
+        </div>
+        <div class="repo-desc">Makes your AI agent think like the laziest senior dev in the room. The best code is the code you never wrote.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/DietrichGebert/ponytail.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#agent-skills</span><span class="topic-pill">#ai-agents</span><span class="topic-pill">#claude</span><span class="topic-pill">#claude-code</span><span class="topic-pill">#claude-code-plugin</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 179.3k</div>
+            <div class="stat-item">🍴 9.8k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #F1E05A"></span>
+                <span>JavaScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/DietrichGebert/ponytail" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="agency-agents a complete ai agency at your fingertips - from frontend wizards to reddit community ninjas, from whimsy injectors to reality checkers. each agent is a specialized expert with personality, processes, and proven deliverables.  ⚡ breakout (+300⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/1972242?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/msitarzewski/agency-agents" target="_blank" class="repo-title">msitarzewski/agency-agents</a>
+            </div>
+            <span class="velocity-pill badge-hot">⚡ Breakout (+300⭐)</span>
+        </div>
+        <div class="repo-desc">A complete AI agency at your fingertips - From frontend wizards to Reddit community ninjas, from whimsy injectors to reality checkers. Each agent is a specialized expert with personality, processes, and proven deliverables.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/msitarzewski/agency-agents.git</code></div>
+                </div>
+                
+        <div class="topics"></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 164.9k</div>
+            <div class="stat-item">🍴 26.6k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #89E051"></span>
+                <span>Shell</span>
+            </div>
+        </div>
+        <a href="https://github.com/msitarzewski/agency-agents" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="dify build agentic workflows, rag pipelines, with rich ai model and tool support on one collaborative workspace. deploy on cloud, vpc, or self-hosted, so teams move from prototype to production without rebuilding the stack. agent agentic-ai agentic-framework agentic-workflow ai 📈 trending (+110⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/127165244?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/langgenius/dify" target="_blank" class="repo-title">langgenius/dify</a>
+            </div>
+            <span class="velocity-pill badge-growing">📈 Trending (+110⭐)</span>
+        </div>
+        <div class="repo-desc">Build Agentic workflows, RAG pipelines, with rich AI model and tool support on one collaborative workspace. Deploy on cloud, VPC, or self-hosted, so teams move from prototype to production without rebuilding the stack.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/langgenius/dify.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#agent</span><span class="topic-pill">#agentic-ai</span><span class="topic-pill">#agentic-framework</span><span class="topic-pill">#agentic-workflow</span><span class="topic-pill">#ai</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 159.9k</div>
+            <div class="stat-item">🍴 25.3k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3572A5"></span>
+                <span>Python</span>
+            </div>
+        </div>
+        <a href="https://github.com/langgenius/dify" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="langflow langflow is a powerful tool for building and deploying ai-powered agents and workflows. agents chatgpt generative-ai large-language-models multiagent 📈 trending (+47⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/85702467?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/langflow-ai/langflow" target="_blank" class="repo-title">langflow-ai/langflow</a>
+            </div>
+            <span class="velocity-pill badge-growing">📈 Trending (+47⭐)</span>
+        </div>
+        <div class="repo-desc">Langflow is a powerful tool for building and deploying AI-powered agents and workflows.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/langflow-ai/langflow.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#agents</span><span class="topic-pill">#chatgpt</span><span class="topic-pill">#generative-ai</span><span class="topic-pill">#large-language-models</span><span class="topic-pill">#multiagent</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 156.1k</div>
+            <div class="stat-item">🍴 10.3k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3572A5"></span>
+                <span>Python</span>
+            </div>
+        </div>
+        <a href="https://github.com/langflow-ai/langflow" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+    </div>
+</section>
+<section class="category-section" id="sec-anime_vtuber_ai" data-category="anime_vtuber_ai">
+    <div class="category-title">
+        <span>✨ Anime & VTuber AI (Live2D, Waifu, Voice)</span>
+        <span class="category-count">6 repos</span>
+    </div>
+    <div class="grid">
+        <div class="card" data-keywords="airi 💖🧸 self hosted, you-owned grok companion, a container of souls of waifu, cyber livings to bring them into our worlds, wishing to achieve neuro-sama's altitude. capable of realtime voice chat, minecraft, factorio playing. web / macos / windows supported. ai-companion ai-vtuber airi digital-life grok-companion 📈 trending (+42⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/165476306?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/moeru-ai/airi" target="_blank" class="repo-title">moeru-ai/airi</a>
+            </div>
+            <span class="velocity-pill badge-growing">📈 Trending (+42⭐)</span>
+        </div>
+        <div class="repo-desc">💖🧸 Self hosted, you-owned Grok Companion, a container of souls of waifu, cyber livings to bring them into our worlds, wishing to achieve Neuro-sama's altitude. Capable of realtime voice chat, Minecraft, Factorio playing. Web / macOS / Windows supported.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Create Virtual Companions, VTubers & Voice-Driven Characters</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/moeru-ai/airi.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#ai-companion</span><span class="topic-pill">#ai-vtuber</span><span class="topic-pill">#airi</span><span class="topic-pill">#digital-life</span><span class="topic-pill">#grok-companion</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 50.9k</div>
+            <div class="stat-item">🍴 5.1k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3178C6"></span>
+                <span>TypeScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/moeru-ai/airi" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="open-llm-vtuber talk to any llm with hands-free voice interaction, voice interruption, and live2d avatar running locally across platforms ai ai-companion ai-vtuber ai-waifu chatbots 📈 trending (+20⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/193920693?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/Open-LLM-VTuber/Open-LLM-VTuber" target="_blank" class="repo-title">Open-LLM-VTuber/Open-LLM-VTuber</a>
+            </div>
+            <span class="velocity-pill badge-growing">📈 Trending (+20⭐)</span>
+        </div>
+        <div class="repo-desc">Talk to any LLM with hands-free voice interaction, voice interruption, and Live2D avatar running locally across platforms</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Create Virtual Companions, VTubers & Voice-Driven Characters</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/Open-LLM-VTuber/Open-LLM-VTuber.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#ai</span><span class="topic-pill">#ai-companion</span><span class="topic-pill">#ai-vtuber</span><span class="topic-pill">#ai-waifu</span><span class="topic-pill">#chatbots</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 14.4k</div>
+            <div class="stat-item">🍴 1.7k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3572A5"></span>
+                <span>Python</span>
+            </div>
+        </div>
+        <a href="https://github.com/Open-LLM-VTuber/Open-LLM-VTuber" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="live2d-widget 把萌萌哒的看板娘抱回家 (ノ≧∇≦)ノ | live2d widget for web platform javascript-plugin live2d ✨ featured">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/16272760?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/stevenjoezhang/live2d-widget" target="_blank" class="repo-title">stevenjoezhang/live2d-widget</a>
+            </div>
+            <span class="velocity-pill badge-normal">✨ Featured</span>
+        </div>
+        <div class="repo-desc">把萌萌哒的看板娘抱回家 (ノ≧∇≦)ノ | Live2D widget for web platform</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Create Virtual Companions, VTubers & Voice-Driven Characters</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/stevenjoezhang/live2d-widget.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#javascript-plugin</span><span class="topic-pill">#live2d</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 11.0k</div>
+            <div class="stat-item">🍴 2.6k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3178C6"></span>
+                <span>TypeScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/stevenjoezhang/live2d-widget" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="programmingvtuberlogos high-quality pngs for logos i made for fun   ✨ featured">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/12034280?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/Aikoyori/ProgrammingVTuberLogos" target="_blank" class="repo-title">Aikoyori/ProgrammingVTuberLogos</a>
+            </div>
+            <span class="velocity-pill badge-normal">✨ Featured</span>
+        </div>
+        <div class="repo-desc">High-quality PNGs for logos I made for fun </div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Create Virtual Companions, VTubers & Voice-Driven Characters</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/Aikoyori/ProgrammingVTuberLogos.git</code></div>
+                </div>
+                
+        <div class="topics"></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 6.2k</div>
+            <div class="stat-item">🍴 302</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #8b949e"></span>
+                <span>CSS</span>
+            </div>
+        </div>
+        <a href="https://github.com/Aikoyori/ProgrammingVTuberLogos" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="kalidokit blendshape and kinematics calculator for mediapipe/tensorflow.js face, eyes, pose, and finger tracking models. face-detection hand-detection mediapipe-facemesh mediapipe-hands mediapipe-pose ✨ featured">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/16789300?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/yeemachine/kalidokit" target="_blank" class="repo-title">yeemachine/kalidokit</a>
+            </div>
+            <span class="velocity-pill badge-normal">✨ Featured</span>
+        </div>
+        <div class="repo-desc">Blendshape and kinematics calculator for Mediapipe/Tensorflow.js Face, Eyes, Pose, and Finger tracking models.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Create Virtual Companions, VTubers & Voice-Driven Characters</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/yeemachine/kalidokit.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#face-detection</span><span class="topic-pill">#hand-detection</span><span class="topic-pill">#mediapipe-facemesh</span><span class="topic-pill">#mediapipe-hands</span><span class="topic-pill">#mediapipe-pose</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 5.7k</div>
+            <div class="stat-item">🍴 717</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3178C6"></span>
+                <span>TypeScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/yeemachine/kalidokit" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="hexo-helper-live2d add the sseexxyyy live2d to your hexo!  ✨ featured">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/13579374?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/EYHN/hexo-helper-live2d" target="_blank" class="repo-title">EYHN/hexo-helper-live2d</a>
+            </div>
+            <span class="velocity-pill badge-normal">✨ Featured</span>
+        </div>
+        <div class="repo-desc">Add the Sseexxyyy live2d to your hexo!</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Create Virtual Companions, VTubers & Voice-Driven Characters</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/EYHN/hexo-helper-live2d.git</code></div>
+                </div>
+                
+        <div class="topics"></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 3.9k</div>
+            <div class="stat-item">🍴 465</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #F1E05A"></span>
+                <span>JavaScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/EYHN/hexo-helper-live2d" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+    </div>
+</section>
+<section class="category-section" id="sec-cool_dev_tools" data-category="cool_dev_tools">
+    <div class="category-title">
+        <span>🛠️ Developer Tools & Powerful CLIs</span>
+        <span class="category-count">6 repos</span>
+    </div>
+    <div class="grid">
+        <div class="card" data-keywords="rea reverse engineer anything with agents, from app behavior down to native binaries. agent-skills ai-agents binary-analysis claude-code cli 🔥 supernova (+1000⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/76467478?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/morluto/rea" target="_blank" class="repo-title">morluto/rea</a>
+            </div>
+            <span class="velocity-pill badge-supernova">🔥 Supernova (+1000⭐)</span>
+        </div>
+        <div class="repo-desc">Reverse engineer anything with agents, from app behavior down to native binaries.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/morluto/rea.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#agent-skills</span><span class="topic-pill">#ai-agents</span><span class="topic-pill">#binary-analysis</span><span class="topic-pill">#claude-code</span><span class="topic-pill">#cli</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 403.2k</div>
+            <div class="stat-item">🍴 101.1k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3178C6"></span>
+                <span>TypeScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/morluto/rea" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="ecc the agent harness performance optimization system. skills, instincts, memory, security, and research-first development for claude code, codex, opencode, cursor and beyond. ai-agents anthropic claude claude-code developer-tools ⚡ breakout (+300⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/124439313?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/affaan-m/ECC" target="_blank" class="repo-title">affaan-m/ECC</a>
+            </div>
+            <span class="velocity-pill badge-hot">⚡ Breakout (+300⭐)</span>
+        </div>
+        <div class="repo-desc">The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/affaan-m/ECC.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#ai-agents</span><span class="topic-pill">#anthropic</span><span class="topic-pill">#claude</span><span class="topic-pill">#claude-code</span><span class="topic-pill">#developer-tools</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 291.8k</div>
+            <div class="stat-item">🍴 43.2k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #F1E05A"></span>
+                <span>JavaScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/affaan-m/ECC" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="ponytail makes your ai agent think like the laziest senior dev in the room. the best code is the code you never wrote. agent-skills ai-agents claude claude-code claude-code-plugin ✨ featured">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/137048761?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/DietrichGebert/ponytail" target="_blank" class="repo-title">DietrichGebert/ponytail</a>
+            </div>
+            <span class="velocity-pill badge-normal">✨ Featured</span>
+        </div>
+        <div class="repo-desc">Makes your AI agent think like the laziest senior dev in the room. The best code is the code you never wrote.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/DietrichGebert/ponytail.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#agent-skills</span><span class="topic-pill">#ai-agents</span><span class="topic-pill">#claude</span><span class="topic-pill">#claude-code</span><span class="topic-pill">#claude-code-plugin</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 179.3k</div>
+            <div class="stat-item">🍴 9.8k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #F1E05A"></span>
+                <span>JavaScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/DietrichGebert/ponytail" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="graphify turn any codebase, with its docs, sql schemas, configs, and pdfs, into a queryable knowledge graph. a /graphify skill for claude code, cursor, codex, and gemini cli: local deterministic ast parsing, every edge explained, no vector store. ai-agents antigravity ast claude-code code-analysis ⚡ breakout (+300⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/297659074?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/Graphify-Labs/graphify" target="_blank" class="repo-title">Graphify-Labs/graphify</a>
+            </div>
+            <span class="velocity-pill badge-hot">⚡ Breakout (+300⭐)</span>
+        </div>
+        <div class="repo-desc">Turn any codebase, with its docs, SQL schemas, configs, and PDFs, into a queryable knowledge graph. A /graphify skill for Claude Code, Cursor, Codex, and Gemini CLI: local deterministic AST parsing, every edge explained, no vector store.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/Graphify-Labs/graphify.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#ai-agents</span><span class="topic-pill">#antigravity</span><span class="topic-pill">#ast</span><span class="topic-pill">#claude-code</span><span class="topic-pill">#code-analysis</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 137.9k</div>
+            <div class="stat-item">🍴 13.2k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3572A5"></span>
+                <span>Python</span>
+            </div>
+        </div>
+        <a href="https://github.com/Graphify-Labs/graphify" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="puppeteer javascript api for chrome and firefox automation chrome chromium developer-tools firefox 📈 trending (+9⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/6906516?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/puppeteer/puppeteer" target="_blank" class="repo-title">puppeteer/puppeteer</a>
+            </div>
+            <span class="velocity-pill badge-growing">📈 Trending (+9⭐)</span>
+        </div>
+        <div class="repo-desc">JavaScript API for Chrome and Firefox</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Developer Productivity, AST Code Intelligence & Terminal Tools</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/puppeteer/puppeteer.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#automation</span><span class="topic-pill">#chrome</span><span class="topic-pill">#chromium</span><span class="topic-pill">#developer-tools</span><span class="topic-pill">#firefox</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 95.8k</div>
+            <div class="stat-item">🍴 9.6k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3178C6"></span>
+                <span>TypeScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/puppeteer/puppeteer" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="openhands 🙌 openhands: ai-driven development agent artificial-intelligence chatgpt claude-ai cli 📈 trending (+92⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/225919603?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/OpenHands/OpenHands" target="_blank" class="repo-title">OpenHands/OpenHands</a>
+            </div>
+            <span class="velocity-pill badge-growing">📈 Trending (+92⭐)</span>
+        </div>
+        <div class="repo-desc">🙌 OpenHands: AI-Driven Development</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/OpenHands/OpenHands.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#agent</span><span class="topic-pill">#artificial-intelligence</span><span class="topic-pill">#chatgpt</span><span class="topic-pill">#claude-ai</span><span class="topic-pill">#cli</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 92.1k</div>
+            <div class="stat-item">🍴 12.2k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3178C6"></span>
+                <span>TypeScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/OpenHands/OpenHands" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+    </div>
+</section>
+<section class="category-section" id="sec-frontier_llm_vision" data-category="frontier_llm_vision">
+    <div class="category-title">
+        <span>🔥 Frontier LLM, Voice & Computer Vision</span>
+        <span class="category-count">6 repos</span>
+    </div>
+    <div class="grid">
+        <div class="card" data-keywords="rea reverse engineer anything with agents, from app behavior down to native binaries. agent-skills ai-agents binary-analysis claude-code cli ✨ featured">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/76467478?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/morluto/rea" target="_blank" class="repo-title">morluto/rea</a>
+            </div>
+            <span class="velocity-pill badge-normal">✨ Featured</span>
+        </div>
+        <div class="repo-desc">Reverse engineer anything with agents, from app behavior down to native binaries.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/morluto/rea.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#agent-skills</span><span class="topic-pill">#ai-agents</span><span class="topic-pill">#binary-analysis</span><span class="topic-pill">#claude-code</span><span class="topic-pill">#cli</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 403.2k</div>
+            <div class="stat-item">🍴 101.1k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3178C6"></span>
+                <span>TypeScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/morluto/rea" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="ecc the agent harness performance optimization system. skills, instincts, memory, security, and research-first development for claude code, codex, opencode, cursor and beyond. ai-agents anthropic claude claude-code developer-tools ✨ featured">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/124439313?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/affaan-m/ECC" target="_blank" class="repo-title">affaan-m/ECC</a>
+            </div>
+            <span class="velocity-pill badge-normal">✨ Featured</span>
+        </div>
+        <div class="repo-desc">The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/affaan-m/ECC.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#ai-agents</span><span class="topic-pill">#anthropic</span><span class="topic-pill">#claude</span><span class="topic-pill">#claude-code</span><span class="topic-pill">#developer-tools</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 291.8k</div>
+            <div class="stat-item">🍴 43.2k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #F1E05A"></span>
+                <span>JavaScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/affaan-m/ECC" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="hermes-agent the agent that grows with you ai ai-agent ai-agents anthropic chatgpt ✨ featured">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/134168893?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/NousResearch/hermes-agent" target="_blank" class="repo-title">NousResearch/hermes-agent</a>
+            </div>
+            <span class="velocity-pill badge-normal">✨ Featured</span>
+        </div>
+        <div class="repo-desc">The agent that grows with you</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/NousResearch/hermes-agent.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#ai</span><span class="topic-pill">#ai-agent</span><span class="topic-pill">#ai-agents</span><span class="topic-pill">#anthropic</span><span class="topic-pill">#chatgpt</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 258.1k</div>
+            <div class="stat-item">🍴 56.6k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3572A5"></span>
+                <span>Python</span>
+            </div>
+        </div>
+        <a href="https://github.com/NousResearch/hermes-agent" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="andrej-karpathy-skills a single claude.md file to improve claude code behavior, derived from andrej karpathy's observations on llm coding pitfalls.  ⚡ breakout (+300⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/254743058?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/multica-ai/andrej-karpathy-skills" target="_blank" class="repo-title">multica-ai/andrej-karpathy-skills</a>
+            </div>
+            <span class="velocity-pill badge-hot">⚡ Breakout (+300⭐)</span>
+        </div>
+        <div class="repo-desc">A single CLAUDE.md file to improve Claude Code behavior, derived from Andrej Karpathy's observations on LLM coding pitfalls.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Deploy Large Language Models, RAG Pipelines & Audio Vision Systems</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/multica-ai/andrej-karpathy-skills.git</code></div>
+                </div>
+                
+        <div class="topics"></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 226.0k</div>
+            <div class="stat-item">🍴 22.6k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #8b949e"></span>
+                <span>N/A</span>
+            </div>
+        </div>
+        <a href="https://github.com/multica-ai/andrej-karpathy-skills" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="firecrawl supercharge your ai agents with data from the web and beyond. building the library for superintelligence. 🔥 ai ai-agents ai-crawler ai-scraping ai-search ✨ featured">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/135057108?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/firecrawl/firecrawl" target="_blank" class="repo-title">firecrawl/firecrawl</a>
+            </div>
+            <span class="velocity-pill badge-normal">✨ Featured</span>
+        </div>
+        <div class="repo-desc">Supercharge your AI agents with data from the web and beyond. Building the library for superintelligence. 🔥</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/firecrawl/firecrawl.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#ai</span><span class="topic-pill">#ai-agents</span><span class="topic-pill">#ai-crawler</span><span class="topic-pill">#ai-scraping</span><span class="topic-pill">#ai-search</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 196.5k</div>
+            <div class="stat-item">🍴 10.4k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3178C6"></span>
+                <span>TypeScript</span>
+            </div>
+        </div>
+        <a href="https://github.com/firecrawl/firecrawl" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+<div class="card" data-keywords="autogpt autogpt is the vision of accessible ai for everyone, to use and to build on. our mission is to provide the tools, so that you can focus on what matters. agentic-ai agents ai artificial-intelligence autonomous-agents 📈 trending (+15⭐)">
+    <div>
+        <div class="card-header">
+            <img src="https://avatars.githubusercontent.com/u/130738209?v=4" class="avatar" alt="avatar" onerror="this.style.display='none'">
+            <div>
+                <a href="https://github.com/Significant-Gravitas/AutoGPT" target="_blank" class="repo-title">Significant-Gravitas/AutoGPT</a>
+            </div>
+            <span class="velocity-pill badge-growing">📈 Trending (+15⭐)</span>
+        </div>
+        <div class="repo-desc">AutoGPT is the vision of accessible AI for everyone, to use and to build on. Our mission is to provide the tools, so that you can focus on what matters.</div>
+        
+                <div class="insight-box">
+                    <div class="insight-title">🎯 Use Case: Build Autonomous AI Agents & Multi-Agent Workflows</div>
+                    <div class="quick-start-box"><code>git clone https://github.com/Significant-Gravitas/AutoGPT.git</code></div>
+                </div>
+                
+        <div class="topics"><span class="topic-pill">#agentic-ai</span><span class="topic-pill">#agents</span><span class="topic-pill">#ai</span><span class="topic-pill">#artificial-intelligence</span><span class="topic-pill">#autonomous-agents</span></div>
+    </div>
+    <div class="card-footer">
+        <div class="meta-stats">
+            <div class="stat-item stat-star">⭐ 187.8k</div>
+            <div class="stat-item">🍴 45.9k</div>
+            <div class="lang-badge">
+                <span class="lang-dot" style="background: #3572A5"></span>
+                <span>Python</span>
+            </div>
+        </div>
+        <a href="https://github.com/Significant-Gravitas/AutoGPT" target="_blank" class="btn-view">View Repo ↗</a>
+    </div>
+</div>
+    </div>
+</section>
+    </div>
+
+    <script>
+        // Chart.js Visualizations
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+
+        // 1. Language Doughnut Chart
+        new Chart(document.getElementById('langChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ["TypeScript", "Python", "JavaScript", "Shell", "CSS", "Other"],
+                datasets: [{
+                    data: [9, 7, 5, 1, 1, 1],
+                    backgroundColor: ['#00f2fe', '#4facfe', '#9d4edd', '#fbbf24', '#10b981', '#f43f5e'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } }
+                }
+            }
+        });
+
+        // 2. Top Stars Bar Chart
+        new Chart(document.getElementById('starsChart'), {
+            type: 'bar',
+            data: {
+                labels: ["rea", "rea", "ECC", "ECC", "hermes-agent", "hermes-agent", "andrej-karpathy-skills", "firecrawl"],
+                datasets: [{
+                    label: 'Stars',
+                    data: [403221, 403221, 291848, 291848, 258103, 258103, 226022, 196457],
+                    backgroundColor: 'rgba(79, 172, 254, 0.7)',
+                    borderColor: '#4facfe',
+                    borderRadius: 6,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                    y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+
+        // 3. Category Volume Chart
+        new Chart(document.getElementById('catChart'), {
+            type: 'polarArea',
+            data: {
+                labels: ["", "", "Developer Tools & Powerful CLIs", "Frontier LLM, Voice & Computer Vision"],
+                datasets: [{
+                    data: [6, 6, 6, 6],
+                    backgroundColor: [
+                        'rgba(0, 242, 254, 0.5)',
+                        'rgba(157, 78, 221, 0.5)',
+                        'rgba(251, 191, 36, 0.5)',
+                        'rgba(16, 185, 129, 0.5)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+                scales: { r: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { display: false } } }
+            }
+        });
+
+        // Filter and Search Functions
+        function filterTab(catId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.category-section').forEach(sec => {
+                if (catId === 'all' || sec.getAttribute('data-category') === catId) {
+                    sec.style.display = 'block';
+                } else {
+                    sec.style.display = 'none';
+                }
+            });
+        }
+        
+        function searchCards() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('.card').forEach(card => {
+                const keywords = card.getAttribute('data-keywords') || '';
+                if (keywords.includes(query)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
